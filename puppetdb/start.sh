@@ -1,15 +1,15 @@
-#!/bin/bash
+#!/bin/sh
 set -x
 
-# Protect against dirty shutdown.
-rm -fr /var/run/puppetdb*
-rm -fr /var/lock/subsys/puppetdb*
-
-/etc/init.d/rsyslog start
-/etc/init.d/postgresql start
-/etc/init.d/puppetdb start
-
-# Ugly!
-sleep 60
-
-tail -f /var/log/messages /var/log/puppetdb/*
+#  -c ${CONFIG}
+# shellcheck disable=SC2086
+exec /usr/bin/java "
+  -cp /usr/share/puppetdb/puppetdb.jar
+  clojure.main
+  -m com.puppetlabs.puppetdb.core
+  services
+  --chuid puppetdb
+  -XX:OnOutOfMemoryError='kill -9 %p'
+  -Xms=192m
+  -Xmx=512m
+" 2>&1
